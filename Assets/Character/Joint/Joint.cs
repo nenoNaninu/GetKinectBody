@@ -25,7 +25,7 @@ public class Joint : MonoBehaviour
     {
         if (prevType != this.Type)
         {
-            if (this.Type == (int)JointType.JointType_HandTipLeft || Type == (int)JointType.JointType_HandTipRight)
+            if (this.Type == (int)JointType.JointType_HandTipLeft || this.Type == (int)JointType.JointType_HandTipRight)
             {
                 this.meshRender.material = this.handMaterial;
             }

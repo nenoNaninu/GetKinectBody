@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 enum JointType
@@ -50,13 +51,13 @@ public class Player : MonoBehaviour
     private int leftFootIndex;
     private int rightFootIndex;
 
-    private float prepareArmShakeTime;
-    private bool prepareArmShakeFlag = false;
+    private float[] prepareArmShakeTime = new float[2];
+    private bool[] prepareArmShakeFlag = new bool[2];//0が右用、1が左用。
 
     private Vector3 prepareArmShakePosition;
 
     private float impactSpan = 3.0f;
-    private float impactShootTime = 0;
+    private float[] impactShootTime = new float[2];
 
     public void SetJointPositionAndType(float[] positionX, float[] positionY, float[] positionZ, int[] argType, int index)
     {
@@ -107,49 +108,64 @@ public class Player : MonoBehaviour
         textObj = GameObject.Find("DebugText");
     }
 
-    void ArmShakeAction()
+    void ArmShakeAction(int handIndex)
     {
-        Vector2 rightHandVec2 = new Vector2(jointArray[rightHandIndex].transform.position.x, jointArray[rightHandIndex].transform.position.z);
-        Vector2 spineVec2 = new Vector2(jointArray[spineIndex].transform.position.x, jointArray[spineIndex].transform.position.z);
-        float disSpineToRight = Vector3.Distance(rightHandVec2, spineVec2);
-        //Debug.Log("disSpineToRight" + disSpineToRight);
-        textObj.GetComponent<TextMesh>().text = "disSpineToRight" + disSpineToRight.ToString() + "\n";
-        if (disSpineToRight > 0.70 && Time.time > this.impactSpan + this.impactShootTime)
+        int useIndex;
+
+        if (handIndex == this.rightHandIndex)
         {
-            //if (!this.prepareArmShakeFlag)
-            //{
-            this.prepareArmShakePosition = this.jointArray[this.rightHandIndex].gameObject.transform.position;
-            //}
-            this.prepareArmShakeFlag = true;
-            this.prepareArmShakeTime = Time.time;
+            useIndex = 0;
+        }
+        else if(handIndex == this.leftHandIndex)
+        {
+            useIndex = 1;
+        }
+        else
+        {
+            throw new ArgumentException("右手と左手のインデックスしか受け付けないゾ");
         }
 
-        if (this.prepareArmShakeFlag)
+        Vector2 indexHandVec2 = new Vector2(jointArray[handIndex].transform.position.x, jointArray[handIndex].transform.position.z);
+        Vector2 spineVec2 = new Vector2(this.jointArray[this.spineIndex].transform.position.x, jointArray[this.spineIndex].transform.position.z);
+        float disSpineToRight = Vector3.Distance(indexHandVec2, spineVec2);
+        
+        //Debug.Log("disSpineToRight" + disSpineToRight);
+        //textObj.GetComponent<TextMesh>().text = "disSpineToRight" + disSpineToRight.ToString() + "\n";
+
+        if (disSpineToRight > 0.60 && Time.time > this.impactSpan + this.impactShootTime[useIndex])
         {
-            if (Time.time > this.prepareArmShakeTime + 0.5f)
+            this.prepareArmShakePosition = this.jointArray[handIndex].gameObject.transform.position;
+            this.prepareArmShakeFlag[useIndex] = true;
+            this.prepareArmShakeTime[useIndex] = Time.time;
+        }
+
+        if (this.prepareArmShakeFlag[useIndex])
+        {
+            if (Time.time > this.prepareArmShakeTime[useIndex] + 0.5f)
             {
-                this.prepareArmShakeFlag = false;
+                this.prepareArmShakeFlag[useIndex] = false;
             }
             else
             {
                 Vector2 prepareRightHnndVec2 = new Vector2(prepareArmShakePosition.x, this.prepareArmShakePosition.z);
-                float disPrepareRightToCurrentRight = Vector2.Distance(rightHandVec2, prepareRightHnndVec2);
-                float disSpineToRightHand = Vector3.Distance(prepareRightHnndVec2, spineVec2);
-                TextMesh tmp = textObj.GetComponent<TextMesh>();
-                tmp.text = tmp.text + "disPre" + disPrepareRightToCurrentRight.ToString();
+                float disPrepareIndexToCurrentRight = Vector2.Distance(indexHandVec2, prepareRightHnndVec2);
+                float disSpineToIndextHand = Vector3.Distance(prepareRightHnndVec2, spineVec2);
+                //TextMesh tmp = textObj.GetComponent<TextMesh>();
+                //tmp.text = tmp.text + "disPre" + disPrepareIndexToCurrentRight.ToString();
 
-                //Debug.Log("::" + disPrepareRightToCurrentRight);
-                if (disPrepareRightToCurrentRight > 1.0f && disSpineToRightHand > 0.6f)
+                if (disPrepareIndexToCurrentRight > 1.0f && disSpineToIndextHand > 0.6f)
                 {
                     //ここに入ったら引火
-                    this.prepareArmShakeFlag = false;
-                    this.impactShootTime = Time.time;
-                    GameObject impact = Instantiate(this.impactToCreate, this.jointArray[rightHandIndex].gameObject.transform.position, Quaternion.identity);
+                    this.prepareArmShakeFlag[useIndex] = false;
+                    this.impactShootTime[useIndex] = Time.time;
+                    GameObject impact = Instantiate(this.impactToCreate, this.jointArray[handIndex].gameObject.transform.position, Quaternion.identity);
                     Destroy(impact, 1);
                 }
             }
         }
     }
+
+    //private void stepOn
 
     // Update is called once per frame
     void Update()
@@ -163,7 +179,8 @@ public class Player : MonoBehaviour
                     this.jointArray[i].gameObject.SetActive(true);
                 }
             }
-            ArmShakeAction();
+            ArmShakeAction(this.rightHandIndex);
+            ArmShakeAction(this.leftHandIndex);
         }
         else
         {
