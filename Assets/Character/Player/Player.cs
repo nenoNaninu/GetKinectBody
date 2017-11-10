@@ -40,6 +40,7 @@ public class Player : MonoBehaviour
 
     public GameObject jointToCreate;
     public GameObject impactToCreate;
+    public GameObject stepOnEfectToCreate;
 
     private int[] jointType = new int[25];
     private Joint[] jointArray = new Joint[25];
@@ -93,7 +94,7 @@ public class Player : MonoBehaviour
         }
     }
 
-    GameObject textObj;
+    TextMesh textMesh;
     // Use this for initialization
     void Start()
     {
@@ -105,7 +106,7 @@ public class Player : MonoBehaviour
             this.jointArray[i].transform.position = Vector3.zero;
             this.jointArray[i].gameObject.SetActive(false);
         }
-        textObj = GameObject.Find("DebugText");
+        textMesh = GameObject.Find("DebugText").GetComponent<TextMesh>();
     }
 
     void ArmShakeAction(int handIndex)
@@ -116,7 +117,7 @@ public class Player : MonoBehaviour
         {
             useIndex = 0;
         }
-        else if(handIndex == this.leftHandIndex)
+        else if (handIndex == this.leftHandIndex)
         {
             useIndex = 1;
         }
@@ -128,7 +129,7 @@ public class Player : MonoBehaviour
         Vector2 indexHandVec2 = new Vector2(jointArray[handIndex].transform.position.x, jointArray[handIndex].transform.position.z);
         Vector2 spineVec2 = new Vector2(this.jointArray[this.spineIndex].transform.position.x, jointArray[this.spineIndex].transform.position.z);
         float disSpineToRight = Vector3.Distance(indexHandVec2, spineVec2);
-        
+
         //Debug.Log("disSpineToRight" + disSpineToRight);
         //textObj.GetComponent<TextMesh>().text = "disSpineToRight" + disSpineToRight.ToString() + "\n";
 
@@ -165,7 +166,46 @@ public class Player : MonoBehaviour
         }
     }
 
-    //private void stepOn
+    private bool[] prepareStepOnFlag = new bool[2];
+    float[] prepareStepOnTime = new float[2];
+    
+    private bool StepOn(int footIndex)
+    {
+        int useIndex;
+        int otherIndex;
+        if (footIndex == (int)JointType.JointType_FootRight)
+        {
+            useIndex = 0;
+            otherIndex = (int)JointType.JointType_FootLeft;
+            this.textMesh.text = "dis::" + (jointArray[footIndex].transform.position.y - jointArray[otherIndex].transform.position.y).ToString();
+
+        }
+        else if (footIndex == (int)JointType.JointType_FootLeft)
+        {
+            useIndex = 1;
+            otherIndex = (int)JointType.JointType_FootRight;
+        }
+        else
+        {
+            throw new ArgumentException("右足と左足のインデックスしか受け付けないゾ");
+        }
+
+        if (jointArray[footIndex].transform.position.y - jointArray[otherIndex].transform.position.y > 0.23)
+        {
+            this.prepareStepOnFlag[useIndex] = true;
+        }
+
+        if (this.prepareStepOnFlag[useIndex])
+        {
+            if (jointArray[footIndex].transform.position.y - jointArray[otherIndex].transform.position.y < 0.05)
+            {
+                this.prepareStepOnFlag[useIndex] = false;
+                GameObject efe = Instantiate(stepOnEfectToCreate, jointArray[footIndex].transform.position,Quaternion.identity);
+                return true;
+            }
+        }
+        return false;
+    }
 
     // Update is called once per frame
     void Update()
@@ -181,6 +221,14 @@ public class Player : MonoBehaviour
             }
             ArmShakeAction(this.rightHandIndex);
             ArmShakeAction(this.leftHandIndex);
+
+            //float distance = Vector3.Distance(this.jointArray[this.rightFootIndex].transform.position,this.jointArray[this.leftFootIndex].transform.position);
+            //float distance = this.jointArray[this.rightFootIndex].transform.position.y - this.jointArray[this.leftFootIndex].transform.position.y;
+            //textMesh.text = "dis::" + distance.ToString();
+
+            StepOn(this.rightFootIndex);
+            StepOn(this.leftFootIndex);
+
         }
         else
         {

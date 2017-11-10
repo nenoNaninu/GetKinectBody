@@ -55,3 +55,5 @@ MonoBehaviour:
     type: 2}
   impactToCreate: {fileID: 1682012565355882, guid: 571645b060b2c8941865b1e803a5c121,
     type: 2}
+  stepOnEfectToCreate: {fileID: 1485082912066194, guid: 5472e830b6ecca9439c32fbfa881a2b9,
+    type: 2}
