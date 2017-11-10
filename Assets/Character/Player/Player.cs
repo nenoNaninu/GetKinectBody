@@ -38,7 +38,7 @@ public class Player : MonoBehaviour
     private bool prevIsPlayer = false;
 
     public GameObject jointToCreate;
-    //public GameObject impactToCreate;
+    public GameObject impactToCreate;
 
     private int[] jointType = new int[25];
     private Joint[] jointArray = new Joint[25];
@@ -92,16 +92,62 @@ public class Player : MonoBehaviour
         }
     }
 
+    GameObject textObj;
     // Use this for initialization
     void Start()
     {
         this.IsPlayer = false;
         for (int i = 0; i < 25; i++)
         {
-            this.jointArray[i] = Instantiate(this.jointToCreate).GetComponent<Joint>() ;
+            this.jointArray[i] = Instantiate(this.jointToCreate).GetComponent<Joint>();
             this.jointArray[i].Type = -1;
             this.jointArray[i].transform.position = Vector3.zero;
             this.jointArray[i].gameObject.SetActive(false);
+        }
+        textObj = GameObject.Find("DebugText");
+    }
+
+    void ArmShakeAction()
+    {
+        Vector2 rightHandVec2 = new Vector2(jointArray[rightHandIndex].transform.position.x, jointArray[rightHandIndex].transform.position.z);
+        Vector2 spineVec2 = new Vector2(jointArray[spineIndex].transform.position.x, jointArray[spineIndex].transform.position.z);
+        float disSpineToRight = Vector3.Distance(rightHandVec2, spineVec2);
+        //Debug.Log("disSpineToRight" + disSpineToRight);
+        textObj.GetComponent<TextMesh>().text = "disSpineToRight" + disSpineToRight.ToString() + "\n";
+        if (disSpineToRight > 0.70 && Time.time > this.impactSpan + this.impactShootTime)
+        {
+            //if (!this.prepareArmShakeFlag)
+            //{
+            this.prepareArmShakePosition = this.jointArray[this.rightHandIndex].gameObject.transform.position;
+            //}
+            this.prepareArmShakeFlag = true;
+            this.prepareArmShakeTime = Time.time;
+        }
+
+        if (this.prepareArmShakeFlag)
+        {
+            if (Time.time > this.prepareArmShakeTime + 0.5f)
+            {
+                this.prepareArmShakeFlag = false;
+            }
+            else
+            {
+                Vector2 prepareRightHnndVec2 = new Vector2(prepareArmShakePosition.x, this.prepareArmShakePosition.z);
+                float disPrepareRightToCurrentRight = Vector2.Distance(rightHandVec2, prepareRightHnndVec2);
+                float disSpineToRightHand = Vector3.Distance(prepareRightHnndVec2, spineVec2);
+                TextMesh tmp = textObj.GetComponent<TextMesh>();
+                tmp.text = tmp.text + "disPre" + disPrepareRightToCurrentRight.ToString();
+
+                //Debug.Log("::" + disPrepareRightToCurrentRight);
+                if (disPrepareRightToCurrentRight > 1.0f && disSpineToRightHand > 0.6f)
+                {
+                    //ここに入ったら引火
+                    this.prepareArmShakeFlag = false;
+                    this.impactShootTime = Time.time;
+                    GameObject impact = Instantiate(this.impactToCreate, this.jointArray[rightHandIndex].gameObject.transform.position, Quaternion.identity);
+                    Destroy(impact, 1);
+                }
+            }
         }
     }
 
@@ -117,40 +163,7 @@ public class Player : MonoBehaviour
                     this.jointArray[i].gameObject.SetActive(true);
                 }
             }
-
-            float disSpineToRight = Vector3.Distance(jointArray[this.spineIndex].gameObject.transform.position, jointArray[rightHandIndex].gameObject.transform.position);
-            Debug.Log("disSpineToRight" + disSpineToRight);
-            if (disSpineToRight > 0.70 && Time.time > this.impactSpan + this.impactShootTime)
-            {
-                if (!this.prepareArmShakeFlag)
-                {
-                    this.prepareArmShakePosition = this.jointArray[this.rightHandIndex].gameObject.transform.position;
-                }
-                this.prepareArmShakeFlag = true;
-                this.prepareArmShakeTime = Time.time;
-            }
-
-            if (this.prepareArmShakeFlag)
-            {
-                if (Time.time > this.prepareArmShakeTime + 0.5f)
-                {
-                    this.prepareArmShakeFlag = false;
-                }
-                else
-                {
-                    float disPrepareRightToCurrentRight = Vector3.Distance(this.prepareArmShakePosition, this.jointArray[rightHandIndex].gameObject.transform.position);
-                    float disSpineToRightHand = Vector3.Distance(jointArray[this.rightHandIndex].gameObject.transform.position, jointArray[spineIndex].gameObject.transform.position);
-                    Debug.Log("disPrepareRightToCurrentRight" + disPrepareRightToCurrentRight);
-                    if (disPrepareRightToCurrentRight > 0.7f && disSpineToRightHand > 0.4f)
-                    {
-                        //ここに入ったら引火
-                        this.prepareArmShakeFlag = false;
-                        this.impactShootTime = Time.time;
-                        //GameObject impact = Instantiate(this.impactToCreate, this.jointArray[rightHandIndex].gameObject.transform.position, Quaternion.identity);
-                        //Destroy(impact, 1);
-                    }
-                }
-            }
+            ArmShakeAction();
         }
         else
         {

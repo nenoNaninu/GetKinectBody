@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 33779006161872080}
   - component: {fileID: 135595595057991212}
   - component: {fileID: 23885402514667930}
+  - component: {fileID: 114214688762774264}
   m_Layer: 0
   m_Name: Joint
   m_TagString: Untagged
@@ -37,7 +38,7 @@ Transform:
   m_GameObject: {fileID: 1460199089887682}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -83,6 +84,21 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1460199089887682}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &114214688762774264
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1460199089887682}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0f2d0899f072cc4ba424e92c2d4f1a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  headMaterial: {fileID: 2100000, guid: 7733b5dfc92b19b45854a95c9a9f79c9, type: 2}
+  handMaterial: {fileID: 2100000, guid: 0b8c5f825fc17174094ab34f9653c726, type: 2}
+  spineMaterial: {fileID: 2100000, guid: 1a19b0bbfc416f648b7567d8888bc546, type: 2}
+  othersMaterial: {fileID: 2100000, guid: 8329694341be82946928b7ea539f0202, type: 2}
 --- !u!135 &135595595057991212
 SphereCollider:
   m_ObjectHideFlags: 1
