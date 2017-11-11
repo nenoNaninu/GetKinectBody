@@ -56,7 +56,7 @@ public class Player : MonoBehaviour
     private float[] prepareArmShakeTime = new float[2];
     private bool[] prepareArmShakeFlag = new bool[2];//0が右用、1が左用。
 
-    private Vector3 prepareArmShakePosition;
+    private Vector3[] prepareArmShakePosition = new Vector3[2];
 
     private float impactSpan = 3.0f;
     private float[] impactShootTime = new float[2];
@@ -91,7 +91,6 @@ public class Player : MonoBehaviour
                 default:
                     break;
             }
-
         }
     }
 
@@ -110,7 +109,7 @@ public class Player : MonoBehaviour
         textMesh = GameObject.Find("DebugText").GetComponent<TextMesh>();
     }
 
-    void ArmShakeAction(int handIndex)
+    Vector2 ArmShakeAction(int handIndex)
     {
         int useIndex;
 
@@ -127,16 +126,13 @@ public class Player : MonoBehaviour
             throw new ArgumentException("右手と左手のインデックスしか受け付けないゾ");
         }
 
-        Vector2 indexHandVec2 = new Vector2(jointArray[handIndex].transform.position.x, jointArray[handIndex].transform.position.z);
-        Vector2 spineVec2 = new Vector2(this.jointArray[this.spineIndex].transform.position.x, jointArray[this.spineIndex].transform.position.z);
+        Vector2 indexHandVec2 = new Vector2(this.jointArray[handIndex].transform.position.x, this.jointArray[handIndex].transform.position.z);
+        Vector2 spineVec2 = new Vector2(this.jointArray[this.spineIndex].transform.position.x, this.jointArray[this.spineIndex].transform.position.z);
         float disSpineToRight = Vector3.Distance(indexHandVec2, spineVec2);
-
-        //Debug.Log("disSpineToRight" + disSpineToRight);
-        //textObj.GetComponent<TextMesh>().text = "disSpineToRight" + disSpineToRight.ToString() + "\n";
 
         if (disSpineToRight > 0.60 && Time.time > this.impactSpan + this.impactShootTime[useIndex])
         {
-            this.prepareArmShakePosition = this.jointArray[handIndex].gameObject.transform.position;
+            this.prepareArmShakePosition[useIndex] = this.jointArray[handIndex].gameObject.transform.position;
             this.prepareArmShakeFlag[useIndex] = true;
             this.prepareArmShakeTime[useIndex] = Time.time;
         }
@@ -149,11 +145,9 @@ public class Player : MonoBehaviour
             }
             else
             {
-                Vector2 prepareRightHnndVec2 = new Vector2(prepareArmShakePosition.x, this.prepareArmShakePosition.z);
+                Vector2 prepareRightHnndVec2 = new Vector2(this.prepareArmShakePosition[useIndex].x, this.prepareArmShakePosition[useIndex].z);
                 float disPrepareIndexToCurrentRight = Vector2.Distance(indexHandVec2, prepareRightHnndVec2);
                 float disSpineToIndextHand = Vector3.Distance(prepareRightHnndVec2, spineVec2);
-                //TextMesh tmp = textObj.GetComponent<TextMesh>();
-                //tmp.text = tmp.text + "disPre" + disPrepareIndexToCurrentRight.ToString();
 
                 if (disPrepareIndexToCurrentRight > 1.0f && disSpineToIndextHand > 0.6f)
                 {
@@ -162,9 +156,11 @@ public class Player : MonoBehaviour
                     this.impactShootTime[useIndex] = Time.time;
                     GameObject impact = Instantiate(this.impactToCreate, this.jointArray[handIndex].gameObject.transform.position, Quaternion.identity);
                     Destroy(impact, 1);
+                    return indexHandVec2 - prepareRightHnndVec2;
                 }
             }
         }
+        return Vector3.zero;
     }
 
     private bool[] prepareStepOnFlag = new bool[2];
@@ -211,7 +207,7 @@ public class Player : MonoBehaviour
     bool[] prepareTouchFloorFlag = new bool[2];
     float[] prepareTouchFloorTime = new float[2];
     //一度手を上げてから床に手を付ける感じ
-    void TouchFloor(int handIdx)
+    bool TouchFloor(int handIdx)
     {
         int useIdx;
         if (handIdx == (int)JointType.JointType_HandTipRight)
@@ -246,10 +242,11 @@ public class Player : MonoBehaviour
                 {
                     GameObject tmp = Instantiate(this.touchFloorEfeToCreate,jointArray[rightFootIndex].transform.position,Quaternion.identity);
                     Destroy(tmp, 1);
+                    return true;
                 }
             }
-
         }
+        return false;
     }
 
     // Update is called once per frame
@@ -267,19 +264,11 @@ public class Player : MonoBehaviour
             ArmShakeAction(this.rightHandIndex);
             ArmShakeAction(this.leftHandIndex);
 
-            //float distance = Vector3.Distance(this.jointArray[this.rightFootIndex].transform.position,this.jointArray[this.leftFootIndex].transform.position);
-            //float distance = this.jointArray[this.rightFootIndex].transform.position.y - this.jointArray[this.leftFootIndex].transform.position.y;
-            //textMesh.text = "dis::" + distance.ToString();
-
             StepOn(this.rightFootIndex);
             StepOn(this.leftFootIndex);
-            //float distance = Vector3.Distance(this.jointArray[this.rightHandIndex].transform.position, this.jointArray[this.leftFootIndex].transform.position);
-            //float distance = this.jointArray[rightHandIndex].transform.position.y - this.jointArray[headIndex].transform.position.y;
-            //this.textMesh.text = "dis::" + distance.ToString();
 
             TouchFloor(this.leftHandIndex);
             TouchFloor(this.rightHandIndex);
-
 
         }
         else
