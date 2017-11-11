@@ -41,6 +41,7 @@ public class Player : MonoBehaviour
     public GameObject jointToCreate;
     public GameObject impactToCreate;
     public GameObject stepOnEfectToCreate;
+    public GameObject touchFloorEfeToCreate;
 
     private int[] jointType = new int[25];
     private Joint[] jointArray = new Joint[25];
@@ -168,7 +169,7 @@ public class Player : MonoBehaviour
 
     private bool[] prepareStepOnFlag = new bool[2];
     float[] prepareStepOnTime = new float[2];
-    
+
     private bool StepOn(int footIndex)
     {
         int useIndex;
@@ -177,8 +178,7 @@ public class Player : MonoBehaviour
         {
             useIndex = 0;
             otherIndex = (int)JointType.JointType_FootLeft;
-            this.textMesh.text = "dis::" + (jointArray[footIndex].transform.position.y - jointArray[otherIndex].transform.position.y).ToString();
-
+            //this.textMesh.text = "dis::" + (jointArray[footIndex].transform.position.y - jointArray[otherIndex].transform.position.y).ToString();
         }
         else if (footIndex == (int)JointType.JointType_FootLeft)
         {
@@ -200,11 +200,56 @@ public class Player : MonoBehaviour
             if (jointArray[footIndex].transform.position.y - jointArray[otherIndex].transform.position.y < 0.05)
             {
                 this.prepareStepOnFlag[useIndex] = false;
-                GameObject efe = Instantiate(stepOnEfectToCreate, jointArray[footIndex].transform.position,Quaternion.identity);
+                GameObject efe = Instantiate(stepOnEfectToCreate, jointArray[footIndex].transform.position, Quaternion.identity);
+                Destroy(efe, 1);
                 return true;
             }
         }
         return false;
+    }
+
+    bool[] prepareTouchFloorFlag = new bool[2];
+    float[] prepareTouchFloorTime = new float[2];
+    //一度手を上げてから床に手を付ける感じ
+    void TouchFloor(int handIdx)
+    {
+        int useIdx;
+        if (handIdx == (int)JointType.JointType_HandTipRight)
+        {
+            useIdx = 0;
+        }
+        else if (handIdx == (int)JointType.JointType_HandTipLeft)
+        {
+            useIdx = 1;
+        }
+        else
+        {
+            throw new ArgumentException("右手と左手のindexしか受け付けないゾ");
+        }
+        if (this.jointArray[handIdx].transform.position.y - this.jointArray[this.headIndex].transform.position.y > 0.35)
+        {
+            this.prepareTouchFloorFlag[useIdx] = true;
+            prepareTouchFloorTime[useIdx] = Time.time;
+        }
+        float timeSpan = 0.5f;
+        if (this.prepareTouchFloorFlag[useIdx])
+        {
+            if (Time.time > prepareTouchFloorTime[useIdx] + timeSpan)
+            {
+                prepareTouchFloorFlag[useIdx] = false;
+            }
+            else
+            {
+                float distance1 = Vector3.Distance(this.jointArray[handIdx].transform.position,this.jointArray[this.leftFootIndex].transform.position);
+                float distance2 = Vector3.Distance(this.jointArray[handIdx].transform.position, this.jointArray[this.rightFootIndex].transform.position);
+                if (distance1 < 0.3f && distance2 > 0.3f)
+                {
+                    GameObject tmp = Instantiate(this.touchFloorEfeToCreate,jointArray[rightFootIndex].transform.position,Quaternion.identity);
+                    Destroy(tmp, 1);
+                }
+            }
+
+        }
     }
 
     // Update is called once per frame
@@ -228,6 +273,13 @@ public class Player : MonoBehaviour
 
             StepOn(this.rightFootIndex);
             StepOn(this.leftFootIndex);
+            //float distance = Vector3.Distance(this.jointArray[this.rightHandIndex].transform.position, this.jointArray[this.leftFootIndex].transform.position);
+            //float distance = this.jointArray[rightHandIndex].transform.position.y - this.jointArray[headIndex].transform.position.y;
+            //this.textMesh.text = "dis::" + distance.ToString();
+
+            TouchFloor(this.leftHandIndex);
+            TouchFloor(this.rightHandIndex);
+
 
         }
         else
